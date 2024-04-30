@@ -1,6 +1,6 @@
-base_url = "https://not-matthias.github.io/apollo/"
-title = "not-matthias"
-description = "This is an example description"
+base_url = "https://shubham-tomar.github.io/myblog/"
+title = "myblog"
+description = "My personal blog"
 build_search_index = false
 generate_feed = true
 compile_sass = true
@@ -28,8 +28,8 @@ menu = [
 ]
 
 socials = [
-    { name = "twitter", url = "https://twitter.com/not_matthias", icon = "twitter" },
-    { name = "github", url = "https://github.com/not-matthias/", icon = "github" },
+    { name = "twitter", url = "https://twitter.com/shubham2omar", icon = "twitter" },
+    { name = "github", url = "https://github.com/shubham-tomar/", icon = "github" },
 ]
 
 custom_css = []
