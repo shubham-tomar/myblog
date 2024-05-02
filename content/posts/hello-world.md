@@ -1,7 +1,7 @@
 +++
 title = "Hello World"
+description = "In this blog i share my experience of creating a blogging site using zola(ssg) and github pages"
 date = "2024-05-01"
-
 [taxonomies]
 tags=["blog"]
 +++
