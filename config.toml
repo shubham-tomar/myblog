@@ -28,7 +28,6 @@ menu = [
 ]
 
 socials = [
-    { name = "twitter", url = "https://twitter.com/shubham2omar", icon = "twitter" },
     { name = "github", url = "https://github.com/shubham-tomar/", icon = "github" },
     { name = "linkedin", url = "https://linkedin.com/in/shubham-tomar-cs/", icon = "linkedin" }
 ]
