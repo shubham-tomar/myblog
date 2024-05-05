@@ -1,6 +1,6 @@
 +++
 title = "Kafka Settings"
-description = "Apache Kafka offers a wide range of configuration settings that can be adjusted to optimize performance, reliability, and efficiency for various use cases. Here are several key settings in Kafka that could be particularly interesting and useful depending on specific requirements"
+description = "Apache Kafka offers a wide range of configuration settings that can be adjusted to optimize performance, reliability, and efficiency for various use cases. Here are several key settings in Kafka that could be particularly interesting and useful depending on specific requirements ........."
 date = "2024-05-04"
 [taxonomies]
 tags=["blog", "data-engineering"]
@@ -10,6 +10,7 @@ Apache Kafka offers a wide range of configuration settings that can be adjusted 
 
 # Message Retention Policy
 `log.retention.hours, log.retention.bytes` These settings control how long messages are kept in Kafka. You can configure retention based on time (e.g., hours, minutes) or the total size of logs on disk. This is crucial for use cases where data needs to be available for a limited time or where storage capacity is a concern.
+<!-- <a href="https://github.com/tontinton/dbeel">dbeel</a>. -->
 > Use Case: In event sourcing architectures or audit systems, you may need to retain messages indefinitely, whereas in streaming analytics, older data may be less valuable.
 # Segment Files
 `log.segment.bytes, log.segment.ms` These settings control the size and age of log segments. Each topic partition is split into segments, which helps in managing the retention and cleanup of old data.
