@@ -17,9 +17,7 @@ Log-Structured Merge-trees (LSMs) are sophisticated data structures that have be
 
 The true prowess of LSMs lies in their approach to managing these SSTables. As more data is written and more SSTables are created, LSMs periodically merge these tables in the background. This merging process, while beneficial for managing space and ensuring that newer writes are integrated with older data, does introduce significant overhead, particularly impacting read operations.
 
-<img class="jpg" src="/posts/lsm.jpg"/>
-
-
+<img class="jpg" src="/myblog/posts/lsm.jpg"/>
 
 
 To mitigate the impact on read performance, LSMs employ several mechanisms:
@@ -34,7 +32,7 @@ As we explore the advancements in storage technology, particularly the rise of N
 
 # The Rise of NVMe SSDs
 
-<img class="png" src="/posts/NVMe.png"/>
+<img class="png" src="/myblog/posts/NVMe.png"/>
 
 The advent of Non-Volatile Memory Express (NVMe) solid-state drives (SSDs) has significantly transformed the storage landscape. NVMe SSDs leverage the parallelism of modern CPUs and interfaces to deliver dramatic improvements over traditional hard disk drives (HDDs) and older SSDs. By connecting directly through the PCIe interface, NVMe SSDs drastically reduce data access latency from milliseconds to microseconds and offer a substantial increase in throughput—reaching speeds several times that of SATA SSDs.
 
@@ -66,7 +64,7 @@ In light of these challenges, while B+ trees offer substantial benefits for cert
 # Introducing TreeLine: A New Paradigm
 In the rapidly evolving landscape of database technologies, the introduction of TreeLine marks a significant milestone. Designed explicitly for the advanced capabilities of Non-Volatile Memory Express (NVMe) solid-state drives, TreeLine ingeniously melds the reliability and structural advantages of traditional B+ trees with cutting-edge enhancements suited for modern storage environments. This novel approach not only caters to the high-performance demands of contemporary applications but also intelligently addresses some of the longstanding inefficiencies in previous database architectures.
 
-<img class="png" src="/posts/treeDB.png"/>
+<img class="png" src="/myblog/posts/treeDB.png"/>
 
 # Innovative Techniques in TreeLine
 ## (A) Record Caching
