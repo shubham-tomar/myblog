@@ -6,6 +6,8 @@ date = "2024-05-05"
 tags=["blog", "databases"]
 +++
 
+<img class="jpg" src="/myblog/posts/treeLine.jpg"/>
+
 # Introduction
 
 In the digital era, the performance of database systems is pivotal, underpinning technology-driven solutions across various industries. Traditionally, systems like <a rel="me noopener noreferrer" target="_blank" href="https://rocksdb.org/">RocksDB</a> and <a rel="me noopener noreferrer" target="_blank" href="https://github.com/google/leveldb?tab=readme-ov-file">LevelDB</a> have relied on log-structured merge-tree (LSM) technologies, optimized for earlier storage environments where write performance was crucial. However, with the advent of Non-Volatile Memory Express (NVMe) SSDs, the storage landscape has radically transformed. NVMe SSDs drastically improve latency, throughput, and parallel I/O capabilities—key features for today's data-intensive applications.
