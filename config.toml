@@ -1,4 +1,4 @@
-base_url = "https://shubham-tomar.github.io/myblog/"
+base_url = "https://shubham-tomar.github.io/"
 title = "shubham-tomar"
 description = "My personal blog"
 build_search_index = false

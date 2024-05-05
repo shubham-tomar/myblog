@@ -19,6 +19,9 @@ The true prowess of LSMs lies in their approach to managing these SSTables. As m
 
 <img class="jpg" src="/posts/lsm.jpg"/>
 
+
+
+
 To mitigate the impact on read performance, LSMs employ several mechanisms:
 
 - `Bloom filters:` These are probabilistic data structures used to test whether an element is a member of a set. In the context of LSMs, Bloom filters are crucial for quickly determining whether a sought key might be in an SSTable without actually reading the SSTable, thereby reducing unnecessary disk reads.
