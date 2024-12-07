@@ -6,7 +6,7 @@ date = "2024-12-06"
 tags=["blog", "Algorithms"]
 +++
 
-<img class="png" src="/myblog/static/posts/lz4.png"/>
+<img class="png" src="/myblog/posts/lz4.png"/>
 
 # Intorduction
 
@@ -76,7 +76,7 @@ It allows the compressor to quickly look up previously encountered sequences to 
 
 #### How Hash Table is populated:
 
-<img class="png" src="/myblog/static/posts/lz4-hm.png"/>
+<img class="png" src="/myblog/posts/lz4-hm.png"/>
 
 `Take a 4-Byte Sequence:` At each position in the input, read 4 bytes.
 
