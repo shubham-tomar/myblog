@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>shubham-tomar</title>
+    <subtitle>My personal blog</subtitle>
+    <link rel="self" type="application/atom+xml" href="https://shubham-tomar.github.io/myblog/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://shubham-tomar.github.io/myblog/"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2024-12-06T00:00:00+00:00</updated>
+    <id>https://shubham-tomar.github.io/myblog/atom.xml</id>
+    <entry xml:lang="en">
+        <title>LZ4 compression algorithm : A Deep Dive</title>
+        <published>2024-12-06T00:00:00+00:00</published>
+        <updated>2024-12-06T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://shubham-tomar.github.io/myblog/posts/lz4/"/>
+        <id>https://shubham-tomar.github.io/myblog/posts/lz4/</id>
+        
+        <content type="html" xml:base="https://shubham-tomar.github.io/myblog/posts/lz4/">&lt;img class=&quot;png&quot; src=&quot;&#x2F;myblog&#x2F;posts&#x2F;lz4.png&quot;&#x2F;&gt;
+&lt;h1 id=&quot;intorduction&quot;&gt;Intorduction&lt;&#x2F;h1&gt;
+&lt;p&gt;Data compression has become a cornerstone of efficient storage and faster data transfers. Among the myriad of compression algorithms available, LZ4 stands out for its speed. It achieves remarkable compression and decompression speeds while maintaining reasonable compression ratios. This blog explores the inner workings of LZ4, its practical use cases, and its advantages over other algorithms.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;what-is-lz4&quot;&gt;What is LZ4?&lt;&#x2F;h1&gt;
+&lt;p&gt;LZ4 is a lossless compression algorithm based on the LZ77 algorithm. It compresses data by identifying repeating patterns and encoding them in a compact format. The focus of LZ4 is on high-speed compression and decompression, making it suitable for real-time applications where performance is critical.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;It&#x27;s also default compression algorithm for most Columnar DB like Clickhouse&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Key Features of LZ4&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;High Speed:&lt;&#x2F;code&gt; Compression and decompression speeds of 400-500 MB&#x2F;s per core. Ideal for scenarios where speed is more critical than compression ratio.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Small Memory Footprint:&lt;&#x2F;code&gt; LZ4 works with Sliding window approach reduces memory usage compared to dictionary-based algorithms.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Streaming-Friendly:&lt;&#x2F;code&gt; Supports block-based compression, making it suitable for streaming large data sets.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h1 id=&quot;how-does-lz4-work&quot;&gt;How Does LZ4 Work?&lt;&#x2F;h1&gt;
+&lt;p&gt;LZ4 is based on the principles of the LZ77 algorithm. Put simply, it identifies repeating patterns in the data and replaces them with a reference to where they previously occurred. This reference is stored as an offset-length pair, which points to the location and size of the repeated sequence. Instead of storing duplicate data, LZ4 efficiently compresses it by specifying the position (offset) and how many bytes (length) to reuse from the previously processed data.&lt;&#x2F;p&gt;
+&lt;p&gt;Now we will discuss in detail, how exactly it does that&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-building-blocks&quot;&gt;The Building Blocks&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;h3 id=&quot;sliding-window-dictionary&quot;&gt;Sliding Window(Dictionary)&lt;&#x2F;h3&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;LZ4 maintains a sliding window (default: 64 KB) to store the recently processed data.&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;This window acts as a &amp;quot;dictionary&amp;quot; to find repeating patterns.&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;It is not stored in the compressed file. It is transient and exists only in memory during compression and decompression&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;During compression:&lt;&#x2F;code&gt; Used to find matches in the input data.&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;During decompression:&lt;&#x2F;code&gt; Reconstructed incrementally by copying previously decompressed data into the output buffer.&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;h3 id=&quot;tokens&quot;&gt;Tokens&lt;&#x2F;h3&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;The compressed data is represented as tokens, &lt;strong&gt;it is a single byte (8 bits)&lt;&#x2F;strong&gt; that serves as a compact descriptor for a segment of compressed data. It encodes two key pieces of information:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Literals:&lt;&#x2F;code&gt; Uncompressed raw data.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Matches:&lt;&#x2F;code&gt; (offset, length) pairs pointing to previous sequences.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;pre style=&quot;background-color:#0f1419;color:#bfbab0;&quot;&gt;&lt;code&gt;&lt;span&gt;| Literal Length (4 bits) | Match Length (4 bits) |
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The first 4 bits represent the length of the &lt;strong&gt;literal&lt;&#x2F;strong&gt;.
+The next 4 bits represent the length of the &lt;strong&gt;match&lt;&#x2F;strong&gt;, minus 4 (because matches shorter than 4 bytes are not encoded).&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;If the literal length or match length exceeds 15 (the maximum that can fit in 4 bits), additional bytes are used to encode the length.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;pre style=&quot;background-color:#0f1419;color:#bfbab0;&quot;&gt;&lt;code&gt;&lt;span&gt;&amp;quot;SUCCESS&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;TOKEN: 0x70 (If encountered fist time)
+&lt;&#x2F;span&gt;&lt;span&gt;TOKEN: 0x07 (If encountered again within sliding window)
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Calculation of token, for above Example:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;strong&gt;Property&lt;&#x2F;strong&gt;&lt;&#x2F;th&gt;&lt;th&gt;&lt;strong&gt;First Occurrence&lt;&#x2F;strong&gt;&lt;&#x2F;th&gt;&lt;th&gt;&lt;strong&gt;Matched Occurrence&lt;&#x2F;strong&gt;&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Literal&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;SUCCESS (7 bytes)&lt;&#x2F;td&gt;&lt;td&gt;No new literal&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Literal Length (4 bits)&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;7 (binary: 0111)&lt;&#x2F;td&gt;&lt;td&gt;0 (binary: 0000)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Match Length (4 bits)&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;0 (binary: 0000)&lt;&#x2F;td&gt;&lt;td&gt;7 (binary: 0111)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Binary Representation&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;0111 0000&lt;&#x2F;td&gt;&lt;td&gt;0000 0111&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Hex Representation&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x70&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x07&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;h3 id=&quot;hash-table&quot;&gt;Hash Table&lt;&#x2F;h3&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;The hash map (or hash table) is a runtime data structure that facilitates fast pattern matching for compression.
+It is a fixed-size array that stores positions of 4-byte sequences (substrings) in the sliding window.
+It allows the compressor to quickly look up previously encountered sequences to find repeating patterns&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Size of HashMap is proportional to the sliding window size (default: 64 KB → 65536 entries).&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h4 id=&quot;how-hash-table-is-populated&quot;&gt;How Hash Table is populated:&lt;&#x2F;h4&gt;
+&lt;img class=&quot;png&quot; src=&quot;&#x2F;myblog&#x2F;posts&#x2F;lz4-hm.png&quot;&#x2F;&gt;
+&lt;p&gt;&lt;code&gt;Take a 4-Byte Sequence:&lt;&#x2F;code&gt; At each position in the input, read 4 bytes.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;Hash the Sequence:&lt;&#x2F;code&gt; Apply a lightweight hash function to the 4-byte sequence.&lt;&#x2F;p&gt;
+&lt;p&gt;Example hash function:&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#0f1419;color:#bfbab0;&quot;&gt;&lt;code&gt;&lt;span&gt;hash = ((byte1 &amp;lt;&amp;lt; 16) + (byte2 &amp;lt;&amp;lt; 8) + byte3) * MAGIC_NUMBER &amp;gt;&amp;gt; (32 - HASH_BITS)
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;MAGIC_NUMBER&lt;&#x2F;strong&gt; and &lt;strong&gt;HASH_BITS&lt;&#x2F;strong&gt; are constants that determine the hash table size and distribution.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;Store the Position:&lt;&#x2F;code&gt; Store the current position of the sequence in the hash table at the computed hash index.
+If a collision occurs (i.e., the hash value already exists), overwrite the old position.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;Advance to the Next Position:&lt;&#x2F;code&gt; Slide one byte forward and repeat the process.
+The hash table only tracks positions within the sliding window.
+When the window slides, old entries in the hash table are overwritten.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;example-walkthrough-of-compression&quot;&gt;Example walkthrough of compression&lt;&#x2F;h2&gt;
+&lt;pre style=&quot;background-color:#0f1419;color:#bfbab0;&quot;&gt;&lt;code&gt;&lt;span&gt;SUCCESS SUCCESS FAIL PENDING SUCCESS
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;code&gt;Compressed Output&lt;&#x2F;code&gt;&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Step&lt;&#x2F;th&gt;&lt;th&gt;Current Sequence&lt;&#x2F;th&gt;&lt;th&gt;Hash Value&lt;&#x2F;th&gt;&lt;th&gt;Match Found?&lt;&#x2F;th&gt;&lt;th&gt;Action&lt;&#x2F;th&gt;&lt;th&gt;Token&lt;&#x2F;th&gt;&lt;th&gt;Output Buffer (Stored on Disk)&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;1&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;SUCCESS&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;1234&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;No&lt;&#x2F;td&gt;&lt;td&gt;Emit Literal&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x70&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x70SUCCESS&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;SUCCESS&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;1234&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Yes (Offset=0, Length=7)&lt;&#x2F;td&gt;&lt;td&gt;Emit Match&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x07&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x70SUCCESS0x07&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;3&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;FAIL&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;5678&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;No&lt;&#x2F;td&gt;&lt;td&gt;Emit Literal&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x40&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x70SUCCESS0x070x40FAIL&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;4&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;PENDING&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;9102&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;No&lt;&#x2F;td&gt;&lt;td&gt;Emit Literal&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x70&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x70SUCCESS0x070x40FAIL0x70PENDING&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;5&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;SUCCESS&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;1234&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Yes (Offset=8, Length=7)&lt;&#x2F;td&gt;&lt;td&gt;Emit Match&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x07&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x70SUCCESS0x070x40FAIL0x70PENDING0x07&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;so the final data which will be stored on disk would be &lt;code&gt;SUCCESS SUCCESS FAIL PENDING SUCCESS&lt;&#x2F;code&gt; --&amp;gt; &lt;code&gt;0x70SUCCESS0x070x40FAIL0x70PENDING0x07&lt;&#x2F;code&gt;&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;How many bytes did we save?&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;pre style=&quot;background-color:#0f1419;color:#bfbab0;&quot;&gt;&lt;code&gt;&lt;span&gt;Uncompressed
+&lt;&#x2F;span&gt;&lt;span&gt;8 (SUCCESS) + 8 (SUCCESS) + 5 (FAIL) + 8 (PENDING) + 8 (SUCCESS) = 37 bytes
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;Compressed
+&lt;&#x2F;span&gt;&lt;span&gt;Tokens (5 bytes) + Literals (19 bytes) + Matches (4 bytes) = 28 bytes
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;we saved 9 bytes for this data not much huh? That&#x27;s ~25% reduction, Let&#x27;s say we have one column &amp;quot;Status&amp;quot; in which we are getting this data, in real world we will thousands of rows. how much we will save in real world use case for similar data?&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Dataset Size&lt;&#x2F;th&gt;&lt;th&gt;Original Size (GB)&lt;&#x2F;th&gt;&lt;th&gt;Compressed Size (GB)&lt;&#x2F;th&gt;&lt;th&gt;Bytes Saved (GB)&lt;&#x2F;th&gt;&lt;th&gt;Compression Ratio&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;1 Million Rows&lt;&#x2F;td&gt;&lt;td&gt;36 MB&lt;&#x2F;td&gt;&lt;td&gt;27 MB&lt;&#x2F;td&gt;&lt;td&gt;9 MB&lt;&#x2F;td&gt;&lt;td&gt;0.75&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;100 Million Rows&lt;&#x2F;td&gt;&lt;td&gt;3.6 GB&lt;&#x2F;td&gt;&lt;td&gt;2.7 GB&lt;&#x2F;td&gt;&lt;td&gt;0.9 GB&lt;&#x2F;td&gt;&lt;td&gt;0.75&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;1 Billion Rows&lt;&#x2F;td&gt;&lt;td&gt;36 GB&lt;&#x2F;td&gt;&lt;td&gt;27 GB&lt;&#x2F;td&gt;&lt;td&gt;9 GB&lt;&#x2F;td&gt;&lt;td&gt;0.75&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;All these savings with high speed (Compression and decompression speeds of 400-500 MB&#x2F;s per core)&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;example-walkthrough-of-decompression&quot;&gt;Example walkthrough of decompression&lt;&#x2F;h2&gt;
+&lt;p&gt;Let&#x27;s take same data to decompress&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;Initialize Output Buffer&lt;&#x2F;code&gt;
+Start with an empty output buffer.
+This buffer will act as the reconstructed sliding window (dictionary).&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Process Each Token&lt;&#x2F;code&gt;
+Each token encodes:
+Literal Length: Number of bytes to copy directly to the output.
+Match Length: Number of bytes to copy from the already decompressed data.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Copy Literals&lt;&#x2F;code&gt;
+Read the literal length from the token.
+Copy that many bytes directly from the compressed stream to the output buffer.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Reconstruct Matches&lt;&#x2F;code&gt;
+Read the match’s offset and length.
+Use the offset to find the start of the matching sequence in the output buffer.
+Copy the matching sequence into the output buffer for the specified length.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Repeat Until Done&lt;&#x2F;code&gt;
+Continue processing tokens, literals, and matches until the compressed stream is fully expanded.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Step&lt;&#x2F;th&gt;&lt;th&gt;Token&lt;&#x2F;th&gt;&lt;th&gt;Action&lt;&#x2F;th&gt;&lt;th&gt;Match Details&lt;&#x2F;th&gt;&lt;th&gt;Literal Data&lt;&#x2F;th&gt;&lt;th&gt;Output Buffer&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;1&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x70&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Copy Literal&lt;&#x2F;td&gt;&lt;td&gt;N&#x2F;A&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;SUCCESS&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;SUCCESS&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x07&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Copy Match&lt;&#x2F;td&gt;&lt;td&gt;Offset = 0, Length = 7&lt;&#x2F;td&gt;&lt;td&gt;N&#x2F;A&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;SUCCESS SUCCESS&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;3&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x40&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Copy Literal&lt;&#x2F;td&gt;&lt;td&gt;N&#x2F;A&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;FAIL&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;SUCCESS SUCCESS FAIL&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;4&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x70&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Copy Literal&lt;&#x2F;td&gt;&lt;td&gt;N&#x2F;A&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;PENDING&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;SUCCESS SUCCESS FAIL PENDING&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;5&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;0x07&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Copy Match&lt;&#x2F;td&gt;&lt;td&gt;Offset = 8, Length = 7&lt;&#x2F;td&gt;&lt;td&gt;N&#x2F;A&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;SUCCESS SUCCESS FAIL PENDING SUCCESS&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h1 id=&quot;best-suited-data-types-for-lz4&quot;&gt;Best-Suited Data Types for LZ4&lt;&#x2F;h1&gt;
+&lt;ol&gt;
+&lt;li&gt;Low-Cardinality Categorical Data&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;ul&gt;
+&lt;li&gt;Status codes: SUCCESS, FAIL, PENDING.&lt;&#x2F;li&gt;
+&lt;li&gt;Country codes: IN, US, UK.&lt;&#x2F;li&gt;
+&lt;li&gt;Boolean values: true, false.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;code&gt;Why:&lt;&#x2F;code&gt; Repeated patterns compress exceptionally well with LZ4.
+Columns with few unique values result in high match ratios.&lt;&#x2F;p&gt;
+&lt;ol start=&quot;2&quot;&gt;
+&lt;li&gt;Strings with Repeating Prefixes or Suffixes&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;ul&gt;
+&lt;li&gt;URLs: https:&#x2F;&#x2F;example.com&#x2F;user&#x2F;123, https:&#x2F;&#x2F;example.com&#x2F;user&#x2F;456.&lt;&#x2F;li&gt;
+&lt;li&gt;File paths: &#x2F;var&#x2F;logs&#x2F;app1.log, &#x2F;var&#x2F;logs&#x2F;app2.log.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;code&gt;Why:&lt;&#x2F;code&gt; LZ4 identifies repeating patterns in prefixes&#x2F;suffixes (e.g., https:&#x2F;&#x2F;example.com&#x2F;) and encodes them efficiently using offsets.&lt;&#x2F;p&gt;
+&lt;ol start=&quot;3&quot;&gt;
+&lt;li&gt;Numeric Data with Repeated or Incremental Values&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;ul&gt;
+&lt;li&gt;Timestamps: 1681234560, 1681234561, 1681234562.&lt;&#x2F;li&gt;
+&lt;li&gt;IDs: 1001, 1002, 1003.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;code&gt;Why:&lt;&#x2F;code&gt;Incremental or repeated patterns can be encoded efficiently.
+Numeric columns often have localized patterns, especially when sorted.&lt;&#x2F;p&gt;
+&lt;ol start=&quot;4&quot;&gt;
+&lt;li&gt;Sparse Data (Mostly Nulls or Defaults)&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;ul&gt;
+&lt;li&gt;Nullable columns: NULL, NULL, NULL, VALUE.&lt;&#x2F;li&gt;
+&lt;li&gt;Defaults: 0, 0, 0, 1.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;code&gt;Why:&lt;&#x2F;code&gt; LZ4 can compact consecutive NULL or default values into small tokens.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;data-types-less-suitable-for-lz4&quot;&gt;Data Types Less Suitable for LZ4&lt;&#x2F;h1&gt;
+&lt;ol&gt;
+&lt;li&gt;High-Cardinality Data&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;ul&gt;
+&lt;li&gt;Random strings: UUIDs (1a2b3c4d).&lt;&#x2F;li&gt;
+&lt;li&gt;Cryptographic hashes.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;code&gt;Why:&lt;&#x2F;code&gt;
+High-cardinality data lacks repeating patterns, reducing compression opportunities.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;Alternative:&lt;&#x2F;code&gt;
+Consider algorithms like Zstandard for better compression ratios on high-entropy data.&lt;&#x2F;p&gt;
+&lt;ol start=&quot;2&quot;&gt;
+&lt;li&gt;Already Compressed or Encrypted Data&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;ul&gt;
+&lt;li&gt;Gzip files, JPEG images, encrypted blobs.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;code&gt;Why:&lt;&#x2F;code&gt;
+Compressed&#x2F;encrypted data has high entropy and no visible patterns for LZ4 to exploit.&lt;&#x2F;p&gt;
+&lt;ol start=&quot;3&quot;&gt;
+&lt;li&gt;Random or Unordered Numeric Data&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;ul&gt;
+&lt;li&gt;Random integers: 123, 9876, 5432.&lt;&#x2F;li&gt;
+&lt;li&gt;Unsorted timestamps.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;code&gt;Why:&lt;&#x2F;code&gt;
+Lack of localized patterns makes pattern matching inefficient.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;Optimization Tip:&lt;&#x2F;code&gt;
+Sort the data to increase locality and improve match opportunities.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;optimization-tips-for-using-lz4-in-columnar-databases&quot;&gt;Optimization Tips for Using LZ4 in Columnar Databases&lt;&#x2F;h1&gt;
+&lt;ol&gt;
+&lt;li&gt;Sort Columns
+Sorting data by frequently queried columns (e.g., timestamps) can significantly improve compression ratios.
+&lt;code&gt;Why:&lt;&#x2F;code&gt; Sorting creates localized patterns, increasing the likelihood of matches.&lt;&#x2F;li&gt;
+&lt;li&gt;Use Low-Cardinality Encodings
+For categorical data, use dictionary encoding before applying LZ4.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;Example:
+&lt;code&gt;Original:&lt;&#x2F;code&gt; SUCCESS, FAIL, PENDING, SUCCESS.
+&lt;code&gt;Encoded:&lt;&#x2F;code&gt; 0, 1, 2, 0 (mapped to a dictionary like {0: SUCCESS, 1: FAIL, 2: PENDING}).
+Compressing encoded data yields better results.&lt;&#x2F;p&gt;
+&lt;ol start=&quot;3&quot;&gt;
+&lt;li&gt;
+&lt;p&gt;Partition Data Strategically
+Partitioning by date, region, or other attributes helps localize patterns within partitions.
+Smaller partitions improve compression effectiveness.&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;Combine with Other Compression Techniques
+Hybrid Compression:
+Apply lightweight compression (e.g., Run-Length Encoding) to preprocess data before using LZ4.&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h1 id=&quot;conclusion&quot;&gt;Conclusion&lt;&#x2F;h1&gt;
+&lt;p&gt;While LZ4 isn&#x27;t the best choice for high-entropy data, it remains an excellent tool for scenarios requiring fast decompression with moderate compression ratios. By understanding the data patterns and preprocessing strategies, you can maximize the benefits of LZ4 in your columnar database.&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>TreeLine DB: Redefining Database Performance</title>
+        <published>2024-05-05T00:00:00+00:00</published>
+        <updated>2024-05-05T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://shubham-tomar.github.io/myblog/posts/treeline-db/"/>
+        <id>https://shubham-tomar.github.io/myblog/posts/treeline-db/</id>
+        
+        <content type="html" xml:base="https://shubham-tomar.github.io/myblog/posts/treeline-db/">&lt;img class=&quot;jpg&quot; src=&quot;&#x2F;myblog&#x2F;posts&#x2F;treeLine.jpg&quot;&#x2F;&gt;
+&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;&#x2F;h1&gt;
+&lt;p&gt;In the digital era, the performance of database systems is pivotal, underpinning technology-driven solutions across various industries. Traditionally, systems like &lt;a rel=&quot;me noopener noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;rocksdb.org&#x2F;&quot;&gt;RocksDB&lt;&#x2F;a&gt; and &lt;a rel=&quot;me noopener noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;google&#x2F;leveldb?tab=readme-ov-file&quot;&gt;LevelDB&lt;&#x2F;a&gt; have relied on log-structured merge-tree (LSM) technologies, optimized for earlier storage environments where write performance was crucial. However, with the advent of Non-Volatile Memory Express (NVMe) SSDs, the storage landscape has radically transformed. NVMe SSDs drastically improve latency, throughput, and parallel I&#x2F;O capabilities—key features for today&#x27;s data-intensive applications.&lt;&#x2F;p&gt;
+&lt;p&gt;This significant advancement challenges traditional database architectures, including LSM&#x27;s sequential write optimization, and paves the way for innovative designs like &lt;a rel=&quot;me noopener noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;mitdbg&#x2F;treeline&quot;&gt;TreeLine DB&lt;&#x2F;a&gt;. TreeLine leverages NVMe&#x27;s strengths to enhance both read and write efficiencies, thereby reshaping database performance expectations. As NVMe technology continues to evolve, it is essential to align database design with these hardware advancements to fully exploit their potential and drive superior performance.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;background-on-lsms&quot;&gt;Background on LSMs&lt;&#x2F;h1&gt;
+&lt;p&gt;Log-Structured Merge-trees (LSMs) are sophisticated data structures that have been designed with a primary focus on optimizing write performance, especially in environments where random writes incur significant overhead. This scenario is typical with traditional hard disk drives (HDDs) and earlier generations of solid-state drives (SSDs). LSMs effectively address this challenge by adopting a strategy where data is initially written in a sequential manner into a memory-resident structure known as a &#x27;memtable&#x27;. Once the memtable reaches its capacity, it is flushed to disk as an immutable &#x27;SSTable&#x27; (Sorted String Table).&lt;&#x2F;p&gt;
+&lt;p&gt;The true prowess of LSMs lies in their approach to managing these SSTables. As more data is written and more SSTables are created, LSMs periodically merge these tables in the background. This merging process, while beneficial for managing space and ensuring that newer writes are integrated with older data, does introduce significant overhead, particularly impacting read operations.&lt;&#x2F;p&gt;
+&lt;img class=&quot;jpg&quot; src=&quot;&#x2F;myblog&#x2F;posts&#x2F;lsm.jpg&quot;&#x2F;&gt;
+&lt;p&gt;To mitigate the impact on read performance, LSMs employ several mechanisms:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;Bloom filters:&lt;&#x2F;code&gt; These are probabilistic data structures used to test whether an element is a member of a set. In the context of LSMs, Bloom filters are crucial for quickly determining whether a sought key might be in an SSTable without actually reading the SSTable, thereby reducing unnecessary disk reads.&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;Compaction processes:&lt;&#x2F;code&gt; These are operations that merge multiple SSTables into fewer SSTables. Compaction helps in reducing the number of SSTables that need to be checked during a read operation and also in reclaiming space used by deleted or overwritten items.&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;While these mechanisms do help in maintaining an efficient system, they come with their own set of complexities and can lead to increased latency in read operations. Additionally, the continuous process of merging and compacting can lead to what is known as &#x27;write amplification&#x27;, where more data is written to the storage medium than was originally intended. This not only affects the overall performance but can also reduce the lifespan of SSDs by increasing the wear and tear on the devices.&lt;&#x2F;p&gt;
+&lt;p&gt;As we explore the advancements in storage technology, particularly the rise of NVMe SSDs, it&#x27;s essential to evaluate whether the traditional advantages of LSMs still hold true or if newer data structures might offer more optimal solutions in light of contemporary hardware capabilities.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;the-rise-of-nvme-ssds&quot;&gt;The Rise of NVMe SSDs&lt;&#x2F;h1&gt;
+&lt;img class=&quot;png&quot; src=&quot;&#x2F;myblog&#x2F;posts&#x2F;NVMe.png&quot;&#x2F;&gt;
+&lt;p&gt;The advent of Non-Volatile Memory Express (NVMe) solid-state drives (SSDs) has significantly transformed the storage landscape. NVMe SSDs leverage the parallelism of modern CPUs and interfaces to deliver dramatic improvements over traditional hard disk drives (HDDs) and older SSDs. By connecting directly through the PCIe interface, NVMe SSDs drastically reduce data access latency from milliseconds to microseconds and offer a substantial increase in throughput—reaching speeds several times that of SATA SSDs.&lt;&#x2F;p&gt;
+&lt;p&gt;NVMe technology excels in handling multiple input&#x2F;output operations simultaneously through thousands of parallel queues, greatly benefiting applications requiring high random access. This capability enables NVMe SSDs to efficiently manage both random and sequential write operations, challenging the necessity of log-structured merge-tree (LSM) storage engines designed for older technologies. As NVMe continues to advance, it reshapes storage performance fundamentals and opens new avenues in database management and application development.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;revisiting-traditional-database-designs-b-trees-and-update-in-place-models&quot;&gt;Revisiting Traditional Database Designs: B+ Trees and Update-in-Place Models&lt;&#x2F;h1&gt;
+&lt;p&gt;In the realm of database architectures, the B+ tree stands as a classic design element, widely adopted due to its robust indexing structure and efficient query performance. Central to the B+ tree architecture is its update-in-place model, where changes to data are made directly in the location where the data originally resides. This model contrasts sharply with systems that write new data to different locations and subsequently update pointers.&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#0f1419;color:#bfbab0;&quot;&gt;&lt;code&gt;&lt;span&gt;                  ------------------------------------
+&lt;&#x2F;span&gt;&lt;span&gt;                  |     7     |     16     |    |    |
+&lt;&#x2F;span&gt;&lt;span&gt;                  ------------------------------------
+&lt;&#x2F;span&gt;&lt;span&gt;                 &#x2F;            |             \
+&lt;&#x2F;span&gt;&lt;span&gt;-----------------     ----------------       -----------------
+&lt;&#x2F;span&gt;&lt;span&gt;| 1 | 2 | 5 | 6 |     | 9 | 12 |  |  |       | 19 | 25 |  |  |
+&lt;&#x2F;span&gt;&lt;span&gt;-----------------     ----------------       -----------------
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The B+ tree is primarily a leaf-oriented structure, with all data pointers and values stored at the leaf nodes, while the interior nodes maintain keys that serve as guides to these leaves. This structure facilitates rapid data retrieval and efficient range queries, making it particularly advantageous for read-heavy workloads. For instance, databases underpinning financial systems or analytics platforms, where query speed and data integrity are paramount, often leverage B+ trees to optimize read operations across vast datasets.&lt;&#x2F;p&gt;
+&lt;p&gt;Moreover, the B+ tree architecture excels in environments with uneven write distributions. It maintains balanced trees through splits and merges, ensuring that the depth of the tree remains manageable and search operations stay efficient, even as datasets grow or become unevenly distributed. This adaptability is crucial for maintaining performance standards in dynamic real-world applications.&lt;&#x2F;p&gt;
+&lt;p&gt;However, despite these strengths, B+ trees face significant challenges, particularly in modern database environments characterized by large-scale and high-throughput requirements. One major drawback is write amplification, where multiple writes are triggered by a single data update. This occurs because updates may necessitate rewriting entire nodes and subsequently propagating changes up the tree. In scenarios involving frequent updates or large-scale insert operations, this can lead to substantial overheads and degrade overall performance.&lt;&#x2F;p&gt;
+&lt;p&gt;Additionally, B+ trees can exhibit inefficiencies in handling large-scale scans or bulk operations. Although efficient for individual queries, the sequential nature of leaf nodes means that operations affecting large portions of the database can become time-consuming as each node is processed in turn.&lt;&#x2F;p&gt;
+&lt;p&gt;In light of these challenges, while B+ trees offer substantial benefits for certain types of workloads, their limitations underpin the ongoing evolution of database technologies. As storage technologies advance, particularly with the rise of NVMe SSDs, it becomes imperative to revisit and rethink traditional designs like B+ trees to better harness the capabilities of modern hardware.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;introducing-treeline-a-new-paradigm&quot;&gt;Introducing TreeLine: A New Paradigm&lt;&#x2F;h1&gt;
+&lt;p&gt;In the rapidly evolving landscape of database technologies, the introduction of TreeLine marks a significant milestone. Designed explicitly for the advanced capabilities of Non-Volatile Memory Express (NVMe) solid-state drives, TreeLine ingeniously melds the reliability and structural advantages of traditional B+ trees with cutting-edge enhancements suited for modern storage environments. This novel approach not only caters to the high-performance demands of contemporary applications but also intelligently addresses some of the longstanding inefficiencies in previous database architectures.&lt;&#x2F;p&gt;
+&lt;img class=&quot;png&quot; src=&quot;&#x2F;myblog&#x2F;posts&#x2F;treeDB.png&quot;&#x2F;&gt;
+&lt;h1 id=&quot;innovative-techniques-in-treeline&quot;&gt;Innovative Techniques in TreeLine&lt;&#x2F;h1&gt;
+&lt;h2 id=&quot;a-record-caching&quot;&gt;(A) Record Caching&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;The primary goal of record caching in TreeLine is to minimize the amplification of reads and writes, a common problem in traditional database systems where updating or reading a small piece of data requires loading and possibly writing an entire disk page.&lt;&#x2F;li&gt;
+&lt;li&gt;TreeLine maintains a cache of records, likely in memory, which allows frequently accessed (&amp;quot;hot&amp;quot;) data to be accessed quickly without the need to repeatedly read from and write to the disk. This is particularly useful in workloads where certain data items are accessed more frequently than others, a scenario known as a &amp;quot;skewed&amp;quot; workload.&lt;&#x2F;li&gt;
+&lt;li&gt;By keeping hot records in memory and batching updates to the same on-disk page, TreeLine reduces the I&#x2F;O required for updating pages, thereby lowering read&#x2F;write amplification and improving overall performance.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;b-page-grouping&quot;&gt;(B) Page Grouping&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Page grouping aims to optimize the physical layout of data on disk to improve the performance of scan operations and reduce the overhead caused by random reads.&lt;&#x2F;li&gt;
+&lt;li&gt;In TreeLine, pages that store adjacent key ranges are organized to be stored contiguously on the disk. This means that keys that are logically adjacent are also physically adjacent, facilitating faster access during range scans.&lt;&#x2F;li&gt;
+&lt;li&gt;When data is stored contiguously, scanning through a range of keys becomes much faster because the system can perform efficient long sequential reads instead of slower random reads. This arrangement also benefits point reads (accessing a single record) because the system can predictably locate data with fewer disk seeks.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;c-insert-forecasting&quot;&gt;(C) Insert Forecasting&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;This technique is used to manage how space is allocated on disk pages more efficiently, addressing a common inefficiency in update-in-place models where inserting new records can lead to significant restructuring of the on-disk data.&lt;&#x2F;li&gt;
+&lt;li&gt;TreeLine uses patterns in past insert operations to predict future inserts, both in terms of the location (which pages) and the volume (how many records).&lt;&#x2F;li&gt;
+&lt;li&gt;By anticipating where and how many new records will be inserted, TreeLine can proactively allocate space on the appropriate pages. This foresight reduces the need for frequent and costly page reorganizations, which would otherwise be necessary to make room for new data. The system, therefore, maintains high performance and stability even as the dataset grows and changes.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h1 id=&quot;conclusion&quot;&gt;Conclusion&lt;&#x2F;h1&gt;
+&lt;p&gt;Throughout this discussion, we have explored the evolving landscape of database performance, underscored by the transition from traditional storage solutions like HDDs and early SSDs to cutting-edge NVMe SSDs. The shift from log-structured merge-tree (LSM) systems, which once dominated the field with their sequential write advantages, to architectures that fully exploit the speed and efficiency of NVMe technology marks a significant milestone in database design.&lt;&#x2F;p&gt;
+&lt;p&gt;TreeLine emerges as a standout innovation in this context, merging the reliability and efficiency of B+ trees with new techniques such as record caching, page grouping, and insert forecasting. These advancements are not just technical improvements but are pivotal in reducing operational overhead and enhancing performance. The compelling results from performance evaluations, which show TreeLine&#x27;s superiority over traditional LSM-based systems and update-in-place models, pave the way for rethinking database architecture in light of modern storage capabilities.&lt;&#x2F;p&gt;
+&lt;p&gt;As database administrators and system architects, the insights gained here should prompt a reevaluation of existing data management strategies, encouraging a shift toward more dynamic and efficient systems aligned with technological progress. The potential for NVMe SSDs to revolutionize database performance is vast, and the introduction of TreeLine is just a glimpse of the future possibilities.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;refereces&quot;&gt;Refereces&lt;&#x2F;h1&gt;
+&lt;p&gt;This blog is inspired by &lt;a rel=&quot;me noopener noreferrer&quot; target=&quot;_blank&quot; href = &quot;https:&#x2F;&#x2F;www.vldb.org&#x2F;pvldb&#x2F;vol16&#x2F;p99-yu.pdf&quot;&gt;TreeLine research paper&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>Kafka Settings</title>
+        <published>2024-05-04T00:00:00+00:00</published>
+        <updated>2024-05-04T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://shubham-tomar.github.io/myblog/posts/kafka-settings/"/>
+        <id>https://shubham-tomar.github.io/myblog/posts/kafka-settings/</id>
+        
+        <content type="html" xml:base="https://shubham-tomar.github.io/myblog/posts/kafka-settings/">&lt;p&gt;Apache Kafka offers a wide range of configuration settings that can be adjusted to optimize performance, reliability, and efficiency for various use cases. Here are several key settings in Kafka that could be particularly interesting and useful depending on specific requirements:&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;message-retention-policy&quot;&gt;Message Retention Policy&lt;&#x2F;h1&gt;
+&lt;p&gt;&lt;code&gt;log.retention.hours, log.retention.bytes&lt;&#x2F;code&gt; These settings control how long messages are kept in Kafka. You can configure retention based on time (e.g., hours, minutes) or the total size of logs on disk. This is crucial for use cases where data needs to be available for a limited time or where storage capacity is a concern.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Use Case: In event sourcing architectures or audit systems, you may need to retain messages indefinitely, whereas in streaming analytics, older data may be less valuable.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h1 id=&quot;segment-files&quot;&gt;Segment Files&lt;&#x2F;h1&gt;
+&lt;p&gt;&lt;code&gt;log.segment.bytes, log.segment.ms&lt;&#x2F;code&gt; These settings control the size and age of log segments. Each topic partition is split into segments, which helps in managing the retention and cleanup of old data.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Use Case: For high-throughput systems, larger segments reduce the overhead of file management but increase the latency of data cleanup.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h1 id=&quot;replication-factor&quot;&gt;Replication Factor&lt;&#x2F;h1&gt;
+&lt;p&gt;&lt;code&gt;replication.factor&lt;&#x2F;code&gt; This setting determines how many copies of each log segment are kept across different brokers. It’s a critical setting for fault tolerance.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Use Case: In critical systems where data loss cannot be tolerated, such as in financial transaction processing, a higher replication factor ensures data availability even if multiple brokers fail.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h1 id=&quot;min-in-sync-replicas&quot;&gt;Min In-Sync Replicas&lt;&#x2F;h1&gt;
+&lt;p&gt;&lt;code&gt;min.insync.replicas&lt;&#x2F;code&gt; This configuration defines the minimum number of replicas that must acknowledge a write for it to be considered successful. This ensures data durability.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Use Case: This is particularly important in systems requiring strong consistency guarantees. Setting this to a value greater than 1 ensures that data is written to more than one broker before a write is acknowledged.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h1 id=&quot;producer-batch-size-and-linger-time&quot;&gt;Producer Batch Size and Linger Time&lt;&#x2F;h1&gt;
+&lt;p&gt;&lt;code&gt;batch.size, linger.ms&lt;&#x2F;code&gt; These settings allow the producer to batch records together into fewer, larger requests. Batch size controls the maximum amount of data to buffer per partition, and linger time specifies the maximum time to buffer data when not at batch size capacity.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Use Case: For applications where throughput is more critical than latency, increasing these values allows more efficient network utilization and higher throughput.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h1 id=&quot;compression&quot;&gt;Compression&lt;&#x2F;h1&gt;
+&lt;p&gt;&lt;code&gt;compression.type&lt;&#x2F;code&gt; This setting on the producer allows enabling compression (e.g., gzip, snappy, lz4) of data before it is sent to brokers. Compression saves bandwidth and storage but adds computational overhead.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Use Case: Useful in scenarios with network bandwidth constraints or where storage cost is a concern, such as in large-scale logging or telemetry data collection.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h1 id=&quot;consumer-fetch-settings&quot;&gt;Consumer Fetch Settings&lt;&#x2F;h1&gt;
+&lt;p&gt;&lt;code&gt;fetch.min.bytes, fetch.max.wait.ms&lt;&#x2F;code&gt; These settings control the behavior of the Kafka consumer regarding how much data the consumer pulls from the broker in each request. This can improve consumer throughput and reduce load on Kafka brokers.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Use Case: For large-scale consumer applications, tuning these settings can lead to more efficient data processing by reducing the number of fetch requests.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h1 id=&quot;auto-offset-reset&quot;&gt;Auto Offset Reset&lt;&#x2F;h1&gt;
+&lt;p&gt;&lt;code&gt;auto.offset.reset&lt;&#x2F;code&gt; This setting determines what the consumer should do if no initial offset is found for a consumer group or if the current offset does not exist anymore on the server.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Use Case: Useful in consumer applications that might need to handle scenarios where they might be reading from a point that no longer exists due to message expiration policies.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;em&gt;These settings allow Kafka to be tuned for specific operational scenarios, making it extremely adaptable to different operational environments and requirements. Adjusting these configurations based on your specific use case can significantly impact the performance, reliability, and efficiency of your Kafka deployment.&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>Hello World</title>
+        <published>2024-05-01T00:00:00+00:00</published>
+        <updated>2024-05-01T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://shubham-tomar.github.io/myblog/posts/hello-world/"/>
+        <id>https://shubham-tomar.github.io/myblog/posts/hello-world/</id>
+        
+        <content type="html" xml:base="https://shubham-tomar.github.io/myblog/posts/hello-world/">&lt;h1 id=&quot;intorduction&quot;&gt;Intorduction&lt;&#x2F;h1&gt;
+&lt;p&gt;Me having zero to little experience in frontend development this blog is just a little overview of how it&#x27;s made. I will not be going into details about any particular points, but i will be discussing about all the tools being used and my take aways to set this blogging site up.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Note: don&#x27;t expect any brilliant technical insights from this post, but read on if you&#x27;re interested in how I&#x27;ve set things up.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h1 id=&quot;zola&quot;&gt;Zola&lt;&#x2F;h1&gt;
+&lt;p&gt;As someone with limited web development experience, the prospect of setting up a personal blog could seem daunting. My main goals were to find a solution that was simple to use, straightforward to deploy, and didn&#x27;t require a steep learning curve. After some research and comparison, I decided on Zola, a static site generator that promised efficiency and ease of use.&lt;&#x2F;p&gt;
+&lt;p&gt;What is Zola?&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Zola is a static site generator built in Rust, known for its blazing-fast performance and zero external dependencies. This means that everything you need comes bundled together, eliminating the need for dealing with a complex stack or configuring multiple pieces of software to work together.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;Key Features That Stood Out&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Simplicity&lt;&#x2F;code&gt;: Zola comes with everything included, such as an integrated templating engine called Tera and built-in support for SCSS. There&#x27;s no need for setting up plugins or extensions to get started.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Speed&lt;&#x2F;code&gt;: Zola is written in rust, it compiles pages at an incredible speed, making the process of building and testing changes almost instantaneous.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Markdown Support&lt;&#x2F;code&gt;: Content creation in Zola is done using Markdown, a lightweight markup language that you can use to format your text easily. This was ideal for me as it allowed me to focus on writing content without worrying about complex HTML syntax.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Themes&lt;&#x2F;code&gt;: Zola offers a variety of themes that can be customized and configured, which made it easy for me to pick a design that suited the aesthetic I wanted for my blog without needing to write a lot of CSS or HTML. I have used apollo theme for this blog.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Deployment&lt;&#x2F;code&gt;: Deploying a Zola site can be as simple as uploading the generated static files to a web server. Additionally, services like GitHub Pages offer seamless integration, which I found incredibly convenient (more on that below).&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;My Experience&lt;&#x2F;code&gt;: Setting up my blog with Zola was a straightforward process. After installing Zola, it was just a matter of choosing a theme and starting to write my content in Markdown. The documentation provided by Zola is clear and concise, which helped me overcome any bumps along the way.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h1 id=&quot;why-github-pages&quot;&gt;Why GitHub Pages?&lt;&#x2F;h1&gt;
+&lt;p&gt;Once I had my blog set up with Zola, the next step was to choose a platform for hosting. I decided to deploy my site on GitHub Pages for its simplicity and seamless integration with GitHub, where I was already managing the blog&#x27;s source code.
+GitHub Pages provides a free hosting service that allows you to host a website directly from a GitHub repository. &lt;&#x2F;p&gt;
+&lt;p&gt;Here’s why it was the perfect fit for me:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Cost-Effective&lt;&#x2F;code&gt;: GitHub Pages is free for public repositories, which is an excellent benefit for someone just starting out or looking to host a personal project without incurring additional costs.
+Ease of Use: Deploying a site on GitHub Pages involves minimal setup. Once configured, updates to your site can be made by simply pushing changes to your repository.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Direct Integration with GitHub&lt;&#x2F;code&gt;: As I was already using GitHub to manage the blog’s version control, GitHub Pages allowed me to streamline my workflow, making it easy to keep my content and deployment tightly linked.
+Setting Up Deployment&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;deploying-a-zola-site-to-github-pages-involves-a-few-key-steps&quot;&gt;Deploying a Zola site to GitHub Pages involves a few key steps:&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Prepare Your Repository&lt;&#x2F;code&gt;: Start by ensuring your blog’s source code is in a GitHub repository. If you’re using a custom domain, you can also add a CNAME file with your domain name at the root of your repository.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;GitHub Actions for Automation&lt;&#x2F;code&gt;: I used GitHub Actions to automate the deployment process. Here’s a simple workflow configuration that builds and deploys the Zola site to GitHub Pages:&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;pre data-lang=&quot;yaml&quot; style=&quot;background-color:#0f1419;color:#bfbab0;&quot; class=&quot;language-yaml &quot;&gt;&lt;code class=&quot;language-yaml&quot; data-lang=&quot;yaml&quot;&gt;&lt;span style=&quot;color:#59c2ff;&quot;&gt;name&lt;&#x2F;span&gt;&lt;span style=&quot;color:#bfbab0cc;&quot;&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#c2d94c;&quot;&gt;Deploy to GitHub Pages
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#f29718;&quot;&gt;on&lt;&#x2F;span&gt;&lt;span style=&quot;color:#bfbab0cc;&quot;&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;color:#59c2ff;&quot;&gt;push&lt;&#x2F;span&gt;&lt;span style=&quot;color:#bfbab0cc;&quot;&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#59c2ff;&quot;&gt;branches&lt;&#x2F;span&gt;&lt;span style=&quot;color:#bfbab0cc;&quot;&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;      - &lt;&#x2F;span&gt;&lt;span style=&quot;color:#c2d94c;&quot;&gt;main  &lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#5c6773;&quot;&gt;# Set this to your default branch
+&lt;&#x2F;span&gt;&lt;span style=&quot;color:#59c2ff;&quot;&gt;jobs&lt;&#x2F;span&gt;&lt;span style=&quot;color:#bfbab0cc;&quot;&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;  &lt;&#x2F;span&gt;&lt;span style=&quot;color:#59c2ff;&quot;&gt;build-and-deploy&lt;&#x2F;span&gt;&lt;span style=&quot;color:#bfbab0cc;&quot;&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#59c2ff;&quot;&gt;runs-on&lt;&#x2F;span&gt;&lt;span style=&quot;color:#bfbab0cc;&quot;&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#c2d94c;&quot;&gt;ubuntu-latest
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#59c2ff;&quot;&gt;steps&lt;&#x2F;span&gt;&lt;span style=&quot;color:#bfbab0cc;&quot;&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;    - &lt;&#x2F;span&gt;&lt;span style=&quot;color:#59c2ff;&quot;&gt;uses&lt;&#x2F;span&gt;&lt;span style=&quot;color:#bfbab0cc;&quot;&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#c2d94c;&quot;&gt;actions&#x2F;checkout@v2
+&lt;&#x2F;span&gt;&lt;span&gt;    - &lt;&#x2F;span&gt;&lt;span style=&quot;color:#59c2ff;&quot;&gt;uses&lt;&#x2F;span&gt;&lt;span style=&quot;color:#bfbab0cc;&quot;&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#c2d94c;&quot;&gt;shalzz&#x2F;zola-deploy-action@v0.17.2
+&lt;&#x2F;span&gt;&lt;span&gt;      &lt;&#x2F;span&gt;&lt;span style=&quot;color:#59c2ff;&quot;&gt;env&lt;&#x2F;span&gt;&lt;span style=&quot;color:#bfbab0cc;&quot;&gt;:
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;color:#59c2ff;&quot;&gt;TOKEN&lt;&#x2F;span&gt;&lt;span style=&quot;color:#bfbab0cc;&quot;&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#c2d94c;&quot;&gt;${{ secrets.GITHUB_TOKEN }}
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;color:#59c2ff;&quot;&gt;PAGES_BRANCH&lt;&#x2F;span&gt;&lt;span style=&quot;color:#bfbab0cc;&quot;&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#c2d94c;&quot;&gt;gh-pages  &lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#5c6773;&quot;&gt;# The default GitHub Pages branch
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This workflow triggers on every push to the main branch, builds the site using Zola, and deploys it to the gh-pages branch.
+Configure GitHub Pages: In your repository settings, select the gh-pages branch as the source for GitHub Pages. This makes the content of this branch the root of your hosted website.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;My Deployment Experience&lt;&#x2F;strong&gt;: The actual deployment process was remarkably straightforward. After pushing my local changes to the repository, GitHub Actions took care of the rest, building and updating my site automatically. Any time I commit new content or updates to my blog, they are live within minutes, without any manual intervention.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h1 id=&quot;in-closing&quot;&gt;In Closing&lt;&#x2F;h1&gt;
+&lt;p&gt;In short, this has been a very rewarding experience, and while I&#x27;m certainly glad that to have gone through it, I am looking forward to not having to worry about it for a while (hah, as if).&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;em&gt;Now, let&#x27;s get writing!&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+</feed>
