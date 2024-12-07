@@ -6,9 +6,7 @@ date = "2024-12-06"
 tags=["blog", "Algorithms"]
 +++
 
-<img class="png" src="/myblog/posts/lz4-2.png"/>
 <img class="png" src="/myblog/posts/lz4.png"/>
-
 
 # Intorduction
 
