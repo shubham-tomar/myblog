@@ -48,12 +48,37 @@
   .sidebar {
     width: 270px;
     position: fixed;
-    left: 0;
+    left: -270px; /* Sidebar hidden initially */
     top: 0;
     height: 100%;
     background-color: #f4d7c4;
     padding: 20px;
     overflow-y: auto;
+    transition: left 0.3s ease; /* Smooth transition */
+}
+
+.sidebar.visible {
+    left: 0; /* Sidebar is visible */
+}
+
+.sb-toggle-button {
+  background-color: #f4d7c4;
+  position: absolute;
+  border: none;
+  color: #0b0908;
+  width: 50px;
+  border: none;
+  height: 40px;
+  cursor: pointer;
+  font-size: 30px;
+  top: 10px;
+  left: 270px;
+  z-index: 1100; /* Ensure the button is above other elements */
+  transition: right 0.3s ease; /* Smooth transition */
+}
+
+.sidebar.visible .sb-toggle-button {
+  right: -50px; /* Adjust if needed */
 }
 
 .table-of-contents ul {
@@ -76,7 +101,7 @@
 
 @media only screen and (max-width: 600px) {
   .sidebar {
-      display: none;
+      width: 100%;
   }
   .content {
       margin-left: 0;
