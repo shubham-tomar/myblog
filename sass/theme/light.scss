@@ -21,11 +21,10 @@
     top: 0;
     width: 75%;
     background-color: #f4e8d9;
-    z-index: 1000; /* Ensures the navbar stays above other content */
 }
 
 .content {
-  margin-top: 60px; /* Adjust this value to match your navbar's height */
+  margin-top: 8%; /* Adjust this value to match your navbar's height */
 }
 
 
@@ -77,10 +76,6 @@
   transition: right 0.3s ease; /* Smooth transition */
 }
 
-.sidebar.visible .sb-toggle-button {
-  right: -50px; /* Adjust if needed */
-}
-
 .table-of-contents ul {
     list-style: none;
     padding-left: 0;
@@ -99,9 +94,9 @@
     text-decoration: underline;
 }
 
-@media only screen and (max-width: 600px) {
+@media only screen and (max-width: 1100px) {
   .sidebar {
-      width: 100%;
+      width: 0%;
   }
   .content {
       margin-left: 0;
