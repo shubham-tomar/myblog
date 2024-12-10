@@ -14,7 +14,21 @@
   .social :hover {
     filter: invert(1)
   }
-  
+
+  .navbar {
+    position: fixed;
+    display: flex;
+    top: 0;
+    width: 75%;
+    background-color: #f4e8d9;
+    z-index: 1000; /* Ensures the navbar stays above other content */
+}
+
+.content {
+  margin-top: 60px; /* Adjust this value to match your navbar's height */
+}
+
+
   table {
     border-collapse: collapse;
     width: 100%;
