@@ -30,5 +30,45 @@
     background-color: #271e0e; /* Optional: Header background color */
   }
 
+  .sidebar {
+    width: 270px;
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background-color: #0b0908;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.table-of-contents ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.table-of-contents li {
+    margin-bottom: 10px;
+}
+
+.table-of-contents a {
+    text-decoration: none;
+    color: #d6dcdf;
+}
+
+.table-of-contents a:hover {
+    text-decoration: underline;
+}
+
+@media only screen and (max-width: 600px) {
+  .sidebar {
+      display: none;
+  }
+  .content {
+      margin-left: 0;
+  }
+}
+
+
+
 
 }

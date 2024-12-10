@@ -122,7 +122,7 @@ Uncompressed
 Compressed
 Tokens (5 bytes) + Literals (19 bytes) + Matches (4 bytes) = 28 bytes
 ```
-we saved 9 bytes for this data not much huh? That's ~25% reduction, Let's say we have one column "Status" in which we are getting this data, in real world we will thousands of rows. how much we will save in real world use case for similar data?
+we saved 9 bytes for this data not much huh? That's ~25% reduction, Let's say we have one column "Status" in which we are getting this data, in real world we will get thousands of rows. how much we will save in real world use case for similar data?
 
 | Dataset Size       | Original Size (GB) | Compressed Size (GB) | Bytes Saved (GB) | Compression Ratio |
 |--------------------|---------------------|-----------------------|------------------|-------------------|
