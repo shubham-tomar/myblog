@@ -14,16 +14,13 @@
     filter: invert(1);
   }
 
-  .navbar {
-    position: fixed;
-    display: flex;
-    top: 0;
-    width: 75%;
-    background-color: #17120b;
-}
 
-.content {
-  margin-top: 8%; /* Adjust this value to match your navbar's height */
+/* filepath: /Users/Shubham.tomar/juspay_projects/learning/myblog/static/css/style.css */
+.wrapper {
+  display: flex;
+  flex-grow: 1;
+  margin-left: 0;
+  transition: margin-left 0.3s ease; /* Smooth transition */
 }
 
 
@@ -42,6 +39,24 @@
   th {
     background-color: #271e0e; /* Optional: Header background color */
   }
+
+  .table-of-contents ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.table-of-contents li {
+    margin-bottom: 10px;
+}
+
+.table-of-contents a {
+    text-decoration: none;
+    color: #d6dcdf;
+}
+
+.table-of-contents a:hover {
+    text-decoration: underline;
+}
 
 .sidebar {
   width: 270px;
@@ -75,27 +90,7 @@ z-index: 1100; /* Ensure the button is above other elements */
 transition: right 0.3s ease; /* Smooth transition */
 }
 
-.sidebar.visible .sb-toggle-button {
-right: -50px; /* Adjust if needed */
-}
 
-.table-of-contents ul {
-    list-style: none;
-    padding-left: 0;
-}
-
-.table-of-contents li {
-    margin-bottom: 10px;
-}
-
-.table-of-contents a {
-    text-decoration: none;
-    color: #d6dcdf;
-}
-
-.table-of-contents a:hover {
-    text-decoration: underline;
-}
 
 @media only screen and (max-width: 1100px) {
   .sidebar {

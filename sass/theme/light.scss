@@ -15,17 +15,13 @@
     filter: invert(1)
   }
 
-  .navbar {
-    position: fixed;
-    display: flex;
-    top: 0;
-    width: 75%;
-    background-color: #f4e8d9;
-}
-
-.content {
-  margin-top: 8%; /* Adjust this value to match your navbar's height */
-}
+//   .navbar {
+//     position: fixed;
+//     display: flex;
+//     top: 0;
+//     width: 75%;
+//     background-color: #f4e8d9;
+// }
 
 
   table {
@@ -54,6 +50,13 @@
     padding: 20px;
     overflow-y: auto;
     transition: left 0.3s ease; /* Smooth transition */
+}
+
+.wrapper {
+  display: flex;
+  flex-grow: 1;
+  margin-left: 0;
+  transition: margin-left 0.3s ease; /* Smooth transition */
 }
 
 .sidebar.visible {
